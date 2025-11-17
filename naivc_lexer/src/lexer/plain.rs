@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use crate::{Token, UmatchedError, dfa::{DFAStateHandle, DeterministicFiniteAutomaton}, token::TokenType};
+use crate::{Token, UmatchedError, dfa::{DFAState, DFAStateHandle, DeterministicFiniteAutomaton}, token::TokenType};
 
 #[derive(Debug, Clone)]
 pub struct PlainLexer {
@@ -22,6 +22,10 @@ impl PlainLexer {
         I: Iterator<Item = char> + 'a,
     {
         PlainLexerIter::new(&self.dfa, chars)
+    }
+
+    pub fn iter_states(&self) -> impl Iterator<Item = (DFAStateHandle, &DFAState)> {
+        self.dfa.iter_states()
     }
 }
 

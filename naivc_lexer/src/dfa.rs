@@ -98,6 +98,13 @@ impl DeterministicFiniteAutomaton {
         rrdfa.subset_reachable()
     }
 
+    pub fn iter_states(&self) -> impl Iterator<Item = (DFAStateHandle, &DFAState)> {
+        self.dfa_states
+            .iter()
+            .enumerate()
+            .map(|(index, state)| (DFAStateHandle::new(index), state))
+    }
+
     pub fn start_state(&self) -> DFAStateHandle {
         self.start_state
     }

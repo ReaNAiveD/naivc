@@ -149,46 +149,23 @@ impl NondeterministicFiniteAutomaton {
         self
     }
 
-    /// Creates the union of this NFA with another.
-    /// The resulting NFA matches either pattern.
-    pub fn union(mut self, mut other: Self) -> Self {
-        let new_start = self.add_intermediate_state();
-        let new_accept = self.add_intermediate_state();
-
-        // Offset the other NFA's states
-        let index_offset = self.states.len();
-        other.offset_states(index_offset);
-
-        // Add epsilon transitions from new start to both old starts
-        self.add_epsilon_transition(new_start, self.start);
-        self.add_epsilon_transition(new_start, other.start);
-
-        // Add epsilon transitions from both old accepts to new accept
-        self.add_epsilon_transition(self.accept, new_accept);
-        self.add_epsilon_transition(other.accept, new_accept);
-
-        // Merge the states
-        self.states.extend(other.states);
-
-        self.start = new_start;
-        self.accept = new_accept;
-        self
-    }
-
     /// Creates the union of multiple NFAs.
     /// The resulting NFA matches any of the input patterns.
     pub fn union_many(automata: impl IntoIterator<Item = Self>) -> Self {
-        let mut automata = automata.into_iter();
-
-        let mut result = match automata.next() {
-            Some(first) => first,
-            None => return Self::new(),
-        };
-
-        for nfa in automata {
-            result = result.union(nfa);
+        let mut result = Self::new();
+        let new_start = result.start;
+        let new_accept = result.accept;
+        for mut nfa in automata {
+            // Offset the NFA's states
+            let index_offset = result.states.len();
+            nfa.offset_states(index_offset);
+            // Merge the states
+            result.states.extend(nfa.states);
+            // Epsilon from new start to nfa's start
+            result.add_epsilon_transition(new_start, nfa.start);
+            // Epsilon from nfa's accept to new accept
+            result.add_epsilon_transition(nfa.accept, new_accept);
         }
-
         result
     }
 
