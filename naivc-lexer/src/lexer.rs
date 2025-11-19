@@ -13,10 +13,7 @@ pub struct UmatchedError {
 }
 
 pub trait Lexer: Debug + Clone + Eq + PartialEq + Hash {
-    fn tokenize<'a, I>(
-        &'a self,
-        chars: I,
-    ) -> impl Iterator<Item = Result<Token<Self>, UmatchedError>> + 'a
+    fn tokenize<I>(chars: I) -> impl Iterator<Item = Result<Token<Self>, UmatchedError>>
     where
-        I: Iterator<Item = char> + 'a;
+        I: Iterator<Item = char>;
 }

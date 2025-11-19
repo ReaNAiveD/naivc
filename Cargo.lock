@@ -3,15 +3,17 @@
 version = 4
 
 [[package]]
-name = "naivc_derive"
+name = "naivc-derive"
 version = "0.1.0"
 dependencies = [
+ "naivc-lexer",
+ "proc-macro2",
  "quote",
  "syn",
 ]
 
 [[package]]
-name = "naivc_lexer"
+name = "naivc-lexer"
 version = "0.1.0"
 
 [[package]]
