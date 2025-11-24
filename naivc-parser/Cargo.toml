@@ -1,0 +1,10 @@
+[package]
+name = "naivc-parser"
+version = "0.1.0"
+edition = "2024"
+
+[features]
+lexer = ["dep:naivc-lexer"]
+
+[dependencies]
+naivc-lexer = { path = "../naivc-lexer", optional = true }

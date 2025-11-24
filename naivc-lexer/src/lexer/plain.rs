@@ -4,7 +4,7 @@ use crate::{Token, UmatchedError, dfa::{DFAState, DFAStateHandle, DeterministicF
 
 #[derive(Debug, Clone)]
 pub struct PlainLexer {
-    lexer_spec: Vec<Rc<TokenType>>,
+    pub lexer_spec: Vec<Rc<TokenType>>,
     dfa: DeterministicFiniteAutomaton,
 }
 
@@ -29,11 +29,6 @@ impl PlainLexer {
     }
 }
 
-pub struct AcceptRecord {
-    pub token_type: Rc<TokenType>,
-    pub state: DFAStateHandle,
-}
-
 pub struct PlainLexerIter<'a, I: Iterator<Item = char>> {
     dfa: &'a DeterministicFiniteAutomaton,
     chars: I,
@@ -53,8 +48,7 @@ impl<'a, I: Iterator<Item = char>> PlainLexerIter<'a, I> {
 
     fn finalize_token(
         &mut self,
-        last_accept: Option<AcceptRecord>,
-        lexeme: String,
+        last_accept: Option<Token<Rc<TokenType>>>,
         unidentified: Vec<char>,
         buf_index: usize,
         start_index: usize,
@@ -62,12 +56,7 @@ impl<'a, I: Iterator<Item = char>> PlainLexerIter<'a, I> {
         if let Some(accept) = last_accept {
             // Successfully matched a token
             self.update_buffer(unidentified, buf_index);
-            Some(Ok(Token {
-                kind: accept.token_type,
-                lexeme,
-                start_index,
-                end_index: self.next_index,
-            }))
+            Some(Ok(accept))
         } else {
             // No match found, return error
             let error_content: String = unidentified.into_iter().collect();
@@ -84,28 +73,22 @@ impl<'a, I: Iterator<Item = char>> PlainLexerIter<'a, I> {
 
     fn finalize_end_of_input(
         &mut self,
-        last_accept: Option<AcceptRecord>,
-        mut lexeme: String,
+        last_accept: Option<Token<Rc<TokenType>>>,
         unidentified: Vec<char>,
         start_index: usize,
     ) -> Option<Result<Token<Rc<TokenType>>, UmatchedError>> {
         if let Some(accept) = last_accept {
             // Return the last accepted token
             self.buffer = unidentified;
-            Some(Ok(Token {
-                kind: accept.token_type,
-                lexeme,
-                start_index,
-                end_index: self.next_index,
-            }))
+            Some(Ok(accept))
         } else if !unidentified.is_empty() {
             // Return unmatched content as error
-            lexeme.extend(unidentified);
-            let error_len = lexeme.len();
+            let error_content: String = unidentified.into_iter().collect();
+            let error_len = error_content.len();
             self.next_index += error_len;
             self.buffer.clear();
             Some(Err(UmatchedError {
-                content: lexeme,
+                content: error_content,
                 start_index,
                 end_index: self.next_index,
             }))
@@ -129,9 +112,8 @@ impl<'a, I: Iterator<Item = char>> Iterator for PlainLexerIter<'a, I> {
     fn next(&mut self) -> Option<Self::Item> {
         let start_index = self.next_index;
         let mut current_state = self.dfa.start_state();
-        let mut last_accept: Option<AcceptRecord> = None;
+        let mut last_accept: Option<Token<Rc<TokenType>>> = None;
         let mut buf_index = 0;
-        let mut lexeme = String::new();
         let mut unidentified = Vec::new();
 
         loop {
@@ -152,18 +134,25 @@ impl<'a, I: Iterator<Item = char>> Iterator for PlainLexerIter<'a, I> {
                         // Continue DFA traversal
                         current_state = next_state.current_state;
                         if let Some(token_type) = next_state.accepted_pattern {
-                            last_accept = Some(AcceptRecord {
-                                token_type,
-                                state: current_state,
-                            });
                             self.next_index += unidentified.len();
-                            lexeme.extend(unidentified.drain(..));
+                            let token = if let Some(mut token) = last_accept {
+                                token.lexeme.extend(unidentified.drain(..));
+                                token.end_index = self.next_index;
+                                token
+                            } else {
+                                Token {
+                                    kind: token_type,
+                                    lexeme: unidentified.drain(..).collect(),
+                                    start_index,
+                                    end_index: self.next_index,
+                                }
+                            };
+                            last_accept = Some(token);
                         }
                     } else {
                         // DFA cannot continue, finalize current token or error
                         return self.finalize_token(
                             last_accept,
-                            lexeme,
                             unidentified,
                             buf_index,
                             start_index,
@@ -174,7 +163,6 @@ impl<'a, I: Iterator<Item = char>> Iterator for PlainLexerIter<'a, I> {
                     // End of input
                     return self.finalize_end_of_input(
                         last_accept,
-                        lexeme,
                         unidentified,
                         start_index,
                     );

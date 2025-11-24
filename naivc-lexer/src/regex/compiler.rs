@@ -20,10 +20,6 @@ impl<'a> RegexCompiler<'a> {
         Self { regex: lexer, }
     }
 
-    pub fn new(regex: RegexLexer<'a>) -> Self {
-        Self { regex, }
-    }
-
     pub fn compile(mut self) -> NondeterministicFiniteAutomaton {
         let mut is_first = true;
         let mut last_token_was_anchor = false;

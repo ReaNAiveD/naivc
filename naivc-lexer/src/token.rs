@@ -1,4 +1,4 @@
-use std::{fmt::Debug, hash::Hash, rc::Rc};
+use std::{fmt::Debug, hash::Hash};
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct TokenType {
