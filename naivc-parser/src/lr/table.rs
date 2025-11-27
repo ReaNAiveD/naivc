@@ -315,7 +315,8 @@ where
         symbol: SymbolHandle,
     ) -> Option<Rc<CanonicalItemSet>> {
         let cc = &self.states[cc.idx()];
-        let item_set: BTreeSet<_> = cc
+        // Collect kernel items (items where we advance the dot past the given symbol)
+        let kernel_items: Vec<_> = cc
             .item_set
             .items
             .iter()
@@ -337,9 +338,14 @@ where
                     })
             })
             .collect();
-        if item_set.is_empty() {
+        if kernel_items.is_empty() {
             None
         } else {
+            // Compute closure over the kernel items
+            let item_set: BTreeSet<_> = kernel_items
+                .into_iter()
+                .flat_map(|item| self.closure(item))
+                .collect();
             Some(Rc::new(CanonicalItemSet { items: item_set }))
         }
     }
@@ -352,10 +358,8 @@ where
         let cc = &self.states[cc.idx()];
         for item in &cc.item_set.items {
             if item.dot_position == self.cfg.production(item.production).symbols.len() {
-                if let Some(la) = item.lookahead {
-                    if Some(la) == lookahead {
-                        return Some(item.production);
-                    }
+                if item.lookahead == lookahead {
+                    return Some(item.production);
                 }
             }
         }

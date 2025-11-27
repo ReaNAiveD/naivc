@@ -8,3 +8,11 @@ lexer = ["dep:naivc-lexer"]
 
 [dependencies]
 naivc-lexer = { path = "../naivc-lexer", optional = true }
+
+[dev-dependencies]
+naivc-derive = { path = "../naivc-derive" }
+
+[[example]]
+name = "json_parser"
+path = "examples/json_parser.rs"
+required-features = ["lexer"]
