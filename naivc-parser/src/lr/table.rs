@@ -107,7 +107,7 @@ impl LRTable {
     }
 }
 
-pub(crate) struct LRTableBuilder<'a, TToken>
+pub struct LRTableBuilder<'a, TToken>
 where
     TToken: Debug + Clone + Eq + PartialEq + Hash,
 {

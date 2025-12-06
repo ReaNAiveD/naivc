@@ -6,7 +6,7 @@
 use naivc_derive::Lexer;
 use naivc_lexer::token::Token;
 use naivc_lexer::Lexer;
-use naivc_parser::lr::{PlainLRTableParser, TokenTree};
+use naivc_parser::lr::{PlainLRTableParser, SyntaxTree};
 use naivc_parser::symbol::{
     ContextFreeGrammar, NonTerminal, NonTerminalHandle, Production, SymbolHandle, TerminalHandle,
 };
@@ -97,7 +97,6 @@ fn build_json_grammar() -> ContextFreeGrammar<JsonToken> {
     let non_terminals = vec![
         // Value -> Object | Array | String | Number | True | False | Null
         NonTerminal {
-            name: "Value".to_string(),
             productions: vec![
                 Production {
                     symbols: vec![nt(NT_OBJECT)],
@@ -124,7 +123,6 @@ fn build_json_grammar() -> ContextFreeGrammar<JsonToken> {
         },
         // Object -> LeftBrace RightBrace | LeftBrace Members RightBrace
         NonTerminal {
-            name: "Object".to_string(),
             productions: vec![
                 Production {
                     symbols: vec![t(T_LEFT_BRACE), t(T_RIGHT_BRACE)],
@@ -136,7 +134,6 @@ fn build_json_grammar() -> ContextFreeGrammar<JsonToken> {
         },
         // Members -> Pair | Members Comma Pair
         NonTerminal {
-            name: "Members".to_string(),
             productions: vec![
                 Production {
                     symbols: vec![nt(NT_PAIR)],
@@ -148,14 +145,12 @@ fn build_json_grammar() -> ContextFreeGrammar<JsonToken> {
         },
         // Pair -> String Colon Value
         NonTerminal {
-            name: "Pair".to_string(),
             productions: vec![Production {
                 symbols: vec![t(T_STRING), t(T_COLON), nt(NT_VALUE)],
             }],
         },
         // Array -> LeftBracket RightBracket | LeftBracket Elements RightBracket
         NonTerminal {
-            name: "Array".to_string(),
             productions: vec![
                 Production {
                     symbols: vec![t(T_LEFT_BRACKET), t(T_RIGHT_BRACKET)],
@@ -167,7 +162,6 @@ fn build_json_grammar() -> ContextFreeGrammar<JsonToken> {
         },
         // Elements -> Value | Elements Comma Value
         NonTerminal {
-            name: "Elements".to_string(),
             productions: vec![
                 Production {
                     symbols: vec![nt(NT_VALUE)],
@@ -185,32 +179,22 @@ fn build_json_grammar() -> ContextFreeGrammar<JsonToken> {
 
 /// Pretty print the parse tree
 fn print_tree<Token: std::fmt::Debug + Clone + Eq + std::hash::Hash>(
-    tree: &TokenTree<Token>,
+    tree: &SyntaxTree<Token>,
     indent: usize,
 ) {
     let prefix = "  ".repeat(indent);
     match tree {
-        TokenTree::Leaf(token) => {
+        SyntaxTree::Leaf(token) => {
             println!("{}Leaf: {:?}", prefix, token);
         }
-        TokenTree::Node {
-            non_terminal_name,
+        SyntaxTree::Node {
+            production_handle,
             children,
         } => {
-            println!("{}Node: {}", prefix, non_terminal_name);
+            println!("{}Node: {:?}", prefix, production_handle);
             for child in children {
                 print_tree(child, indent + 1);
             }
-        }
-        TokenTree::Error {
-            found,
-            potential_tokens,
-            skipped,
-        } => {
-            println!(
-                "{}Error: found={:?}, potential={:?}, skipped={:?}",
-                prefix, found, potential_tokens, skipped
-            );
         }
     }
 }
@@ -224,7 +208,7 @@ fn main() {
     // Build the grammar and parser
     println!("Building JSON grammar and LR parser...");
     let grammar = build_json_grammar();
-    let parser = PlainLRTableParser::new(&grammar);
+    let parser = PlainLRTableParser::new(grammar);
     println!("Parser built successfully!\n");
 
     // Parse each example

@@ -76,7 +76,6 @@ impl NonTerminalHandle {
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct NonTerminal {
-    pub name: String,
     pub productions: Vec<Production>,
 }
 

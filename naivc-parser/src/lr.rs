@@ -6,4 +6,4 @@ pub use table::{
     CanonicalCollection, CanonicalCollectionAction, CanonicalCollectionHandle, CanonicalItem,
     CanonicalItemSet, LRTable,
 };
-pub use parser::{LRParseError, PlainLRTableParser, TokenCursor, TokenTree};
+pub use parser::{LRParseError, PlainLRTableParser, TokenCursor, RecoverableTokenCursor, SyntaxTree, RecoverableTree};

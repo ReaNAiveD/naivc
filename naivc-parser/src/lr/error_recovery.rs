@@ -4,13 +4,13 @@ use std::hash::Hash;
 
 use crate::symbol::{TerminalHandle, TokenType};
 
-use super::parser::{LRParseError, TokenCursor, TokenTree};
+use super::parser::{LRParseError, RecoverableTokenCursor, RecoverableTree};
 use super::table::CanonicalCollectionAction;
 
 pub trait ErrorRecoveryStrategy {
     fn recover<'p, 't, TToken, Token>(
         &self,
-        cursor: &mut TokenCursor<'p, 't, TToken, Token>,
+        cursor: &mut RecoverableTokenCursor<'p, 't, TToken, Token>,
     ) -> Option<LRParseError<'t, Token>>
     where
         TToken: Debug + Clone + Eq + PartialEq + Hash,
@@ -22,7 +22,7 @@ pub struct DeleteRecovery;
 impl ErrorRecoveryStrategy for DeleteRecovery {
     fn recover<'p, 't, TToken, Token>(
         &self,
-        cursor: &mut TokenCursor<'p, 't, TToken, Token>,
+        cursor: &mut RecoverableTokenCursor<'p, 't, TToken, Token>,
     ) -> Option<LRParseError<'t, Token>>
     where
         TToken: Debug + Clone + Eq + PartialEq + Hash,
@@ -56,7 +56,7 @@ pub struct InsertRecovery {
 impl ErrorRecoveryStrategy for InsertRecovery {
     fn recover<'p, 't, TToken, Token>(
         &self,
-        cursor: &mut TokenCursor<'p, 't, TToken, Token>,
+        cursor: &mut RecoverableTokenCursor<'p, 't, TToken, Token>,
     ) -> Option<LRParseError<'t, Token>>
     where
         TToken: Debug + Clone + Eq + PartialEq + Hash,
@@ -80,7 +80,7 @@ impl ErrorRecoveryStrategy for InsertRecovery {
                     CanonicalCollectionAction::Shift(target) => {
                         cursor.stated_symbol_stack.push((
                             *target,
-                            TokenTree::Error {
+                            RecoverableTree::Error {
                                 found: cursor.peek(),
                                 potential_tokens: potential_tokens.iter().cloned().collect(),
                                 skipped: Vec::new(),
@@ -123,7 +123,7 @@ impl PanicRecovery {
 impl ErrorRecoveryStrategy for PanicRecovery {
     fn recover<'p, 't, TToken, Token>(
         &self,
-        cursor: &mut TokenCursor<'p, 't, TToken, Token>,
+        cursor: &mut RecoverableTokenCursor<'p, 't, TToken, Token>,
     ) -> Option<LRParseError<'t, Token>>
     where
         TToken: Debug + Clone + Eq + PartialEq + Hash,
